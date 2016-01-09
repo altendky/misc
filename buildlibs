@@ -3,7 +3,7 @@
 export ME="$(basename "$0")"
 
 if [ $# -ne 1 ]; then
-    echo ${ME}: 1 parameter expected (e.g. linux-64), $# received
+    echo "${ME}: 1 parameter expected (e.g. linux-64), $# received"
     exit 1
 fi
 
