@@ -37,26 +37,6 @@ if not args.in_virtual:
 
         sys.exit(1)
 
-    try:
-        import PyQt5.QtCore
-    except ImportError:
-        print('')
-        print('')
-        print('    PyQt5 not installed:')
-        print('')
-
-        if sys.platform == 'win32':
-            print('        https://riverbankcomputing.com/software/pyqt/download5')
-            print('')
-            print('        Select the appropriate architecture to match your python install')
-        else:
-            print('        Use your package manager to install')
-            print('')
-            print('        e.g. sudo apt-get install python3-pyqt5')
-        print('')
-
-        sys.exit(1)
-
     if sys.platform not in ['win32', 'linux']:
         raise Exception("Unsupported sys.platform: {}".format(sys.platform))
 
@@ -64,10 +44,6 @@ if not args.in_virtual:
         bin = os.path.join(args.virtualenv, 'Scripts')
     else:
         bin = os.path.join(args.virtualenv, 'bin')
-
-    pyqt5 = os.path.dirname(PyQt5.__file__)
-    pyqt5_plugins = PyQt5.QtCore.QLibraryInfo.location(
-        PyQt5.QtCore.QLibraryInfo.PluginsPath)
 
     activate = os.path.join(bin, 'activate')
 
@@ -83,8 +59,6 @@ if not args.in_virtual:
     virtualenv_python = os.path.realpath(os.path.join(bin, 'python'))
     virtualenv_python_command = [virtualenv_python,
                                  myfile,
-                                 '--pyqt5', pyqt5,
-                                 '--pyqt5-plugins', pyqt5_plugins,
                                  '--bin', bin,
                                  '--activate', activate,
                                  '--in-virtual']
@@ -101,62 +75,50 @@ else:
     src = os.path.join(mydir, args.virtualenv, 'src')
     os.makedirs(src, exist_ok=True)
 
-    zip_repos = {
-        'python-can': 'https://bitbucket.org/altendky/python-can/get/'
-                      'a8973411ef9c.zip',
-        'canmatrix': 'https://github.com/ebroecker/canmatrix/archive/'
-                     'ba2b01e595cc282fa5bf35d98e46ff800fde3aed.zip',
-        'bitstruct': 'https://github.com/altendky/bitstruct/archive/'
-                     'a1dff1f96e8b113fefb7296e637c010654e1a6a6.zip'
-    }
-
-#    pip.main(['install', 'gitpython'])
-#    import git
-#
-#    git_repos = {
+    # Install Git dependencies
+    git_repos = {
 #        'canmatrix': 'https://github.com/ebroecker/canmatrix.git',
 #        'bitstruct': 'https://github.com/altendky/bitstruct.git'
-#    }
-#
-#    for name, url in git_repos.items():
-#        dir = os.path.join(src, name)
-#        git.Repo.clone_from(url, dir)
-#        setup(dir)
+    }
 
-    pip.main(['install', 'requests'])
-    import requests
-    import zipfile
-    import io
-    import shutil
-    for name, url in zip_repos.items():
-        response = requests.get(url)
-        zip_data = io.BytesIO()
-        zip_data.write(response.content)
-        zip_file = zipfile.ZipFile(zip_data)
-        zip_dir = os.path.split(zip_file.namelist()[0])[0]
-        zip_file.extractall(path=src)
-        shutil.move(os.path.join(src, zip_dir),
-                    os.path.join(src, name))
-        setup(os.path.join(src, name))
+    if len(git_repos) > 0:
+        pip.main(['install', 'gitpython'])
+        import git
+
+        for name, url in git_repos.items():
+            dir = os.path.join(src, name)
+            git.Repo.clone_from(url, dir)
+            setup(dir)
+
+    # Install Zip dependencies
+    zip_repos = {
+#        'bitstruct': 'https://github.com/altendky/bitstruct/archive/'
+#                     'a1dff1f96e8b113fefb7296e637c010654e1a6a6.zip'
+    }
+
+    if len(zip_repos) > 0:
+        pip.main(['install', 'requests'])
+        import requests
+        import zipfile
+        import io
+        import shutil
+        for name, url in zip_repos.items():
+            response = requests.get(url)
+            zip_data = io.BytesIO()
+            zip_data.write(response.content)
+            zip_file = zipfile.ZipFile(zip_data)
+            zip_dir = os.path.split(zip_file.namelist()[0])[0]
+            zip_file.extractall(path=src)
+            shutil.move(os.path.join(src, zip_dir),
+                        os.path.join(src, name))
+            setup(os.path.join(src, name))
 
     # TODO: Figure out why this can't be moved before other installs
     #       Dependencies maybe?
-    setup(mydir)
-
-    with open(os.path.join(args.bin, 'qt.conf'), 'w') as f:
-        content = [
-            '[Paths]',
-            'Prefix = "{}"'.format(args.pyqt5),
-            'Binaries = "{}"'.format(args.pyqt5)
-        ]
-
-        if sys.platform == 'win32':
-            content = [l.replace('\\', '/') for l in content]
-
-        if sys.platform == 'linux':
-            content.append('Plugins = "{}"'.format(args.pyqt5_plugins))
-
-        f.write('\n'.join(content) + '\n')
+    try:
+        setup(mydir)
+    except FileNotFoundError:
+        pass
 
     activate = args.activate
     if sys.platform == 'win32':
@@ -166,18 +128,6 @@ else:
 
     with open(os.path.join(mydir, 'activate'), 'w', newline='') as f:
         f.write('source {}\n'.format(activate))
-
-    if sys.platform == 'win32':
-        import ctypes
-        try:
-            ctypes.windll.LoadLibrary("PCANBasic")
-        except OSError:
-            print('')
-            print('')
-            print('    Unable to load PCANBasic.dll, it is recommended you')
-            print('    install the PEAK drivers: ')
-            print('')
-            print('        http://www.peak-system.com/produktcd/Drivers/PeakOemDrv.exe')
 
     print('')
     print('')
