@@ -1,5 +1,14 @@
 #!/bin/bash
 
+export ME="$(basename "$0")"
+
+if [ $# -ne 1 ]; then
+    echo ${ME}: 1 parameter expected (e.g. linux-64), $# received
+    exit 1
+fi
+
+export TARGET="$1"
+
 set -e
 set -vx
 
@@ -13,8 +22,8 @@ source setenv
 #export BUILDROOT="${GITROOT}-build"
 mkdir ${BUILDROOT}
 cd ${BUILDROOT}
-mkdir sysroot-linux-x64
-ln -s sysroot-linux-x64 sysroot
+mkdir sysroot-${TARGET}
+ln -s sysroot-${TARGET} sysroot
 #export SYSROOT="$(pwd)/sysroot"
 mkdir "${SYSROOT}/src"
 
@@ -22,7 +31,7 @@ wget --directory-prefix="${BUILDROOT}" https://www.python.org/ftp/python/3.4.3/P
 cd "${SYSROOT}/src"
 tar -xvf "${BUILDROOT}/Python-3.4.3.tar.xz"
 cd Python-3.4.3
-pyqtdeploycli --package python --target linux-64 configure
+pyqtdeploycli --package python --target ${TARGET} configure
 qmake SYSROOT=$SYSROOT
 make
 make install
@@ -31,7 +40,7 @@ wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/file
 cd "${SYSROOT}/src"
 tar -xvf "${BUILDROOT}/sip-4.17.tar.gz"
 cd sip-4.17
-pyqtdeploycli --package sip --target linux-64 configure
+pyqtdeploycli --package sip --target ${TARGET} configure
 ${PY} configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --configuration=sip-linux.cfg
 # TODO   use our to-be-built qmake?
 qmake
@@ -59,7 +68,7 @@ wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/file
 cd "${SYSROOT}/src"
 tar -xvf "${BUILDROOT}/PyQt-gpl-5.5.1.tar.gz"
 cd PyQt-gpl-5.5.1
-pyqtdeploycli --package pyqt5 --target linux-64 configure
+pyqtdeploycli --package pyqt5 --target ${TARGET} configure
 ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-linux.cfg --qmake="${SYSROOT}/qt-5.5.1/bin/qmake" --confirm-license
 make
 make install
@@ -69,4 +78,4 @@ cd "${SYSROOT}/src"
 tar -xvf "${BUILDROOT}/python-can-1.4.1.tar.gz"
 # TODO is there something to build?  i think not...
 #cd python-can-1.4.1
-#pyqtdeploycli --package python-can --target linux-64 configure
+#pyqtdeploycli --package python-can --target ${TARGET} configure
