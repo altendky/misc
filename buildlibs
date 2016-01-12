@@ -1,6 +1,8 @@
 #!/bin/bash
 
 export ME="$(basename "$0")"
+# http://stackoverflow.com/a/246128/228539
+export HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ $# -ne 1 ]; then
     echo "${ME}: 1 parameter expected (e.g. linux-64), $# received"
@@ -20,62 +22,212 @@ source setenv
 #git clone https://canopyner.phoreplay.com/diffusion/C/canopyner.git "${GITROOT}"
 
 #export BUILDROOT="${GITROOT}-build"
-mkdir ${BUILDROOT}
+mkdir -p ${BUILDROOT}
 cd ${BUILDROOT}
-mkdir sysroot-${TARGET}
-ln -s sysroot-${TARGET} sysroot
+mkdir -p sysroot-${TARGET}
+ln -fs sysroot-${TARGET} sysroot
 #export SYSROOT="$(pwd)/sysroot"
-mkdir "${SYSROOT}/src"
+mkdir -p "${SYSROOT}/src"
+mkdir -p "${SYSROOT}/native/src"
 
-wget --directory-prefix="${BUILDROOT}" https://www.python.org/ftp/python/3.4.3/Python-3.4.3.tar.xz
-cd "${SYSROOT}/src"
-tar -xvf "${BUILDROOT}/Python-3.4.3.tar.xz"
-cd Python-3.4.3
-pyqtdeploycli --package python --target ${TARGET} configure
-qmake SYSROOT=$SYSROOT
+function get_src {
+    export LIB="$1"
+    export VERSION="$2"
+    export NAME="${LIB}-${VERSION}"
+    export EXT="$3"
+    export URLBASE="$4"
+    if [ "$5" ]; then
+        export NATIVE="/native"
+    else
+        export NATIVE=""
+    fi
+    export TARBALL=${NAME}.${EXT}
+    if [ ! -f "${BUILDROOT}/${TARBALL}" ]; then
+        wget --directory-prefix="${BUILDROOT}" ${URLBASE}/${TARBALL}
+    fi
+    cd "${SYSROOT}${NATIVE}/src"
+    if [ ! -d "${NAME}" ]; then
+        tar -xvf "${BUILDROOT}/${TARBALL}"
+    fi
+    cd ${NAME}
+}
+
+
+function not {
+    if [ ! -f "buildlibs.$1" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function set_configed {
+    touch buildlibs.configed
+}
+
+function runif {
+    export FILE="buildlibs.$1"
+    shift
+
+    if [ ! -f "${FILE}" ]; then
+        if "$@"; then
+            touch "${FILE}"
+        fi
+    fi
+
+    return ${RETURN}
+}
+
+
+function not_installed {
+    if [ ! -f buildlibs.installed ]; then
+        export not_installed=0
+    else
+        export not_installed=1
+    fi
+
+    touch buildlibs.installed
+
+    return ${not_configed}
+}
+
+
+# for native Python pip
+get_src openssl 1.0.2d tar.gz https://www.openssl.org/source/old/1.0.2 native
+#./Configure --prefix="${SYSROOT}/native" no-shared
+runif config ./config --prefix="${SYSROOT}/native"
+#if not_configed; then
+#    ./config --prefix="${SYSROOT}/native"
+#    set_configed
+#fi
 make
-make install
+runif test make test
+runif install make install
 
-wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/files/sip/sip-4.17/sip-4.17.tar.gz
-cd "${SYSROOT}/src"
-tar -xvf "${BUILDROOT}/sip-4.17.tar.gz"
-cd sip-4.17
+
+#export LIB="qt-everywhere-opensource-src"
+#export VERSION="5.5.1"
+#export NAME="${LIB}-${VERSION}"
+#export TARBALL="${NAME}.tar.gz"
+#if [ ! -f "${BUILDROOT}/${TARBALL}" ]; then
+#    wget --directory-prefix="${BUILDROOT}" http://download.qt.io/official_releases/qt/5.5/${VERSION}/single/${TARBALL}
+#fi
+#cd "${SYSROOT}/native/src"
+#if [ ! -d "${NAME}" ]; then
+#    tar -xvf "${BUILDROOT}/${TARBALL}"
+#fi
+#cd ${NAME}
+#get_src qt-everywhere-opensource-src 5.5.1 tar.gz http://download.qt.io/official_releases/qt/5.5/5.5.1/single native
+#./configure -prefix "${SYSROOT}/native/qt-${VERSION}" -static -release -nomake libs -nomake examples -qt-xcb -v -I ${SYSROOT}/native/include -L ${SYSROOT}/native/lib -confirm-license -opensource
+#make
+#make install
+#export PATH="${SYSROOT}/native/qt-5.5.1/bin:${PATH}"
+
+# TODO: we really shouldn't need this if we have a Python install already?
+# but let's do it to make independent of existing...
+get_src Python 3.4.4 tar.xz https://www.python.org/ftp/python/3.4.4 native
+#pyqtdeploycli --package python configure
+#qmake SYSROOT=${SYSROOT}/native
+runif config ./configure --prefix=${SYSROOT}/native --with-ensurepip=install
+make
+runif install make install
+
+get_src sip 4.17 tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.17 native
+#pyqtdeploycli --package sip configure
+runif config ${PY} configure.py --static --sysroot="${SYSROOT}/native"
+#qmake
+make
+runif install make install
+
+cd "${SYSROOT}/native/src"
+if [ ! -d "mxe" ]; then
+    git clone https://github.com/mxe/mxe.git
+fi
+cd mxe
+export PACKAGES="gcc openssl qt5"
+make MXE_TARGETS='i686-w64-mingw32.static' ${PACKAGES}
+export PATH="${SYSROOT}/native/src/mxe/usr/i686-w64-mingw32.static/qt5/bin:${PATH}"
+export PATH="${SYSROOT}/native/src/mxe/usr/bin:${PATH}"
+
+export PREFIX="i686-w64-mingw32.static"
+export CC=$PREFIX-gcc
+#export QMAKE_CC=${CC}
+export CXX=$PREFIX-g++
+#export QMAKE_CXX=${CXX}
+export CPP=$PREFIX-cpp
+#export QMAKE_CPP=${CPP}
+export RANLIB=$PREFIX-ranlib
+export LD=$PREFIX-ld
+export AS=$PREFIX-as
+
+export QMAKE_XSPEC="win32-g++"
+
+#export LIB="Python"
+#export VERSION="3.4.4"
+#export NAME="${LIB}-${VERSION}"
+#export TARBALL="${NAME}.tar.xz"
+#if [ ! -f "${BUILDROOT}/${TARBALL}" ]; then
+#    wget --directory-prefix="${BUILDROOT}" https://www.python.org/ftp/python/${VERSION}/${TARBALL}
+#fi
+#cd "${SYSROOT}/src"
+#if [ ! -d "${NAME}" ]; then
+#    tar -xvf "${BUILDROOT}/${TARBALL}"
+#fi
+#cd ${NAME}
+
+#get_src Python 3.4.4 tar.xz https://www.python.org/ftp/python/3.4.4
+#runif config pyqtdeploycli --package python --target ${TARGET} configure
+#qmake SYSROOT=${SYSROOT}
+#make -e
+#runif install make install
+
+cd "${SYSROOT}"
+runif python tar -xvf "${HERE}/python3.4-sysroot.tgz"
+
+#wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/files/sip/sip-4.17/sip-4.17.tar.gz
+#cd "${SYSROOT}/src"
+#tar -xvf "${BUILDROOT}/sip-4.17.tar.gz"
+#cd sip-4.17
+get_src sip 4.17 tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.17
 pyqtdeploycli --package sip --target ${TARGET} configure
-${PY} configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --configuration=sip-linux.cfg
-# TODO   use our to-be-built qmake?
+# TODO: no tools and no examples and no demos
+runif configure python configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --configuration=sip-win.cfg
+#runif configure python configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --platform win32-g++ --target-py-version=3.4
 qmake
 make
-make install
+runif install make install
 
-wget --directory-prefix="${BUILDROOT}" https://www.openssl.org/source/openssl-1.0.2d.tar.gz
-cd "${SYSROOT}/src"
-tar -xvf "${BUILDROOT}/openssl-1.0.2d.tar.gz"
-cd openssl-1.0.2d
-./config --prefix="${SYSROOT}"
-make
-make test
-make install
+#get_src openssl 1.0.2d tar.gz https://www.openssl.org/source/old/1.0.2
+##./Configure --prefix="${SYSROOT}" mingw no-shared
+#make
+#make install
 
-wget --directory-prefix="${BUILDROOT}" http://download.qt.io/official_releases/qt/5.5/5.5.1/single/qt-everywhere-opensource-src-5.5.1.tar.gz
-cd "${SYSROOT}/src"
-tar -xvf "${BUILDROOT}/qt-everywhere-opensource-src-5.5.1.tar.gz"
-cd qt-everywhere-opensource-src-5.5.1
-./configure -prefix "${SYSROOT}/qt-5.5.1" -static -release -nomake examples -qt-xcb -openssl-linked -v -I $SYSROOT/include -L $SYSROOT/lib -confirm-license -opensource
-make
-make install
+#get_src zlib 1.2.8 tar.gz http://zlib.net
+##CROSS_PREFIX=i686-w64-mingw32.static- ./configure --prefix="${SYSROOT}" --static
+#make
+#make install
 
-wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt-gpl-5.5.1.tar.gz
-cd "${SYSROOT}/src"
-tar -xvf "${BUILDROOT}/PyQt-gpl-5.5.1.tar.gz"
-cd PyQt-gpl-5.5.1
+##wget --directory-prefix="${BUILDROOT}" http://download.qt.io/official_releases/qt/5.5/5.5.1/single/qt-everywhere-opensource-src-5.5.1.tar.gz
+#cd "${SYSROOT}/src"
+##tar -xvf "${BUILDROOT}/qt-everywhere-opensource-src-5.5.1.tar.gz"
+#cd qt-everywhere-opensource-src-5.5.1
+#./configure -prefix "${SYSROOT}/qt-5.5.1" -static -release -nomake examples -qt-xcb -openssl-linked -v -I ${SYSROOT}/include -L ${SYSROOT}/lib -confirm-license -opensource
+#make
+#make install
+
+#wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt-gpl-5.5.1.tar.gz
+#cd "${SYSROOT}/src"
+#tar -xvf "${BUILDROOT}/PyQt-gpl-5.5.1.tar.gz"
+#cd PyQt-gpl-5.5.1
+get_src PyQt-gpl 5.5.1 tar.gz http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1
 pyqtdeploycli --package pyqt5 --target ${TARGET} configure
-${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-linux.cfg --qmake="${SYSROOT}/qt-5.5.1/bin/qmake" --confirm-license
+#runif configure ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-linux.cfg --qmake="${SYSROOT}/qt-5.5.1/bin/qmake" --confirm-license
+runif configure ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-win.cfg --confirm-license --sip="${SYSROOT}/native/bin/sip"
+sed -i 's/QtDesigner \+//' PyQt5.pro
+sed -i 's/QtOpenGL \+//' PyQt5.pro
+sed -i 's/_QOpenGLFunctions_ES2 \+//' PyQt5.pro
+runif qmake qmake -recursive PyQt5.pro
 make
-make install
+runif install make install
 
-wget --directory-prefix="${BUILDROOT}" https://pypi.python.org/packages/source/p/python-can/python-can-1.4.1.tar.gz
-cd "${SYSROOT}/src"
-tar -xvf "${BUILDROOT}/python-can-1.4.1.tar.gz"
-# TODO is there something to build?  i think not...
-#cd python-can-1.4.1
-#pyqtdeploycli --package python-can --target ${TARGET} configure
+cp -r ${HERE}/../st/venv/src/* ${SYSROOT}/src

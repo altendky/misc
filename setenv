@@ -1,7 +1,7 @@
 set -e
 set -vx
 
-export PY=python3.4
+export PY=python
 
 export GITROOT="$(pwd)"
 export BUILDROOT="${GITROOT}-build"
