@@ -1,8 +1,7 @@
 #!/bin/bash
 
-export ME="$(basename "$0")"
-# http://stackoverflow.com/a/246128/228539
-export HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export ME="$(BASENAME \"$0\")"
+export SRCROOT="$(pwd)"
 
 if [ $# -ne 1 ]; then
     echo "${ME}: 1 parameter expected (e.g. linux-64), $# received"
@@ -15,18 +14,11 @@ set -e
 set -vx
 
 source setenv
-#export PY=python3.4
 
-#export GITROOT="$(pwd)"
-#export GITROOT="$(pwd)/canopyner"
-#git clone https://canopyner.phoreplay.com/diffusion/C/canopyner.git "${GITROOT}"
-
-#export BUILDROOT="${GITROOT}-build"
 mkdir -p ${BUILDROOT}
 cd ${BUILDROOT}
 mkdir -p sysroot-${TARGET}
 ln -fs sysroot-${TARGET} sysroot
-#export SYSROOT="$(pwd)/sysroot"
 mkdir -p "${SYSROOT}/src"
 mkdir -p "${SYSROOT}/native/src"
 
@@ -93,49 +85,23 @@ function not_installed {
 
 
 # for native Python pip
-get_src openssl 1.0.2d tar.gz https://www.openssl.org/source/old/1.0.2 native
+get_src openssl ${OPENSSL_VERSION} tar.gz https://www.openssl.org/source/old/${OPENSSL_VERSION_SHORT} native
 #./Configure --prefix="${SYSROOT}/native" no-shared
 runif config ./config --prefix="${SYSROOT}/native"
-#if not_configed; then
-#    ./config --prefix="${SYSROOT}/native"
-#    set_configed
-#fi
 make
 runif test make test
 runif install make install
 
 
-#export LIB="qt-everywhere-opensource-src"
-#export VERSION="5.5.1"
-#export NAME="${LIB}-${VERSION}"
-#export TARBALL="${NAME}.tar.gz"
-#if [ ! -f "${BUILDROOT}/${TARBALL}" ]; then
-#    wget --directory-prefix="${BUILDROOT}" http://download.qt.io/official_releases/qt/5.5/${VERSION}/single/${TARBALL}
-#fi
-#cd "${SYSROOT}/native/src"
-#if [ ! -d "${NAME}" ]; then
-#    tar -xvf "${BUILDROOT}/${TARBALL}"
-#fi
-#cd ${NAME}
-#get_src qt-everywhere-opensource-src 5.5.1 tar.gz http://download.qt.io/official_releases/qt/5.5/5.5.1/single native
-#./configure -prefix "${SYSROOT}/native/qt-${VERSION}" -static -release -nomake libs -nomake examples -qt-xcb -v -I ${SYSROOT}/native/include -L ${SYSROOT}/native/lib -confirm-license -opensource
-#make
-#make install
-#export PATH="${SYSROOT}/native/qt-5.5.1/bin:${PATH}"
-
 # TODO: we really shouldn't need this if we have a Python install already?
 # but let's do it to make independent of existing...
-get_src Python 3.4.4 tar.xz https://www.python.org/ftp/python/3.4.4 native
-#pyqtdeploycli --package python configure
-#qmake SYSROOT=${SYSROOT}/native
+get_src Python ${PYTHON_VERSION} tar.xz https://www.python.org/ftp/python/${PYTHON_VERSION} native
 runif config ./configure --prefix=${SYSROOT}/native --with-ensurepip=install
 make
 runif install make install
 
-get_src sip 4.17 tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.17 native
-#pyqtdeploycli --package sip configure
+get_src sip ${SIP_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION} native
 runif config ${PY} configure.py --static --sysroot="${SYSROOT}/native"
-#qmake
 make
 runif install make install
 
@@ -162,33 +128,11 @@ export AS=$PREFIX-as
 
 export QMAKE_XSPEC="win32-g++"
 
-#export LIB="Python"
-#export VERSION="3.4.4"
-#export NAME="${LIB}-${VERSION}"
-#export TARBALL="${NAME}.tar.xz"
-#if [ ! -f "${BUILDROOT}/${TARBALL}" ]; then
-#    wget --directory-prefix="${BUILDROOT}" https://www.python.org/ftp/python/${VERSION}/${TARBALL}
-#fi
-#cd "${SYSROOT}/src"
-#if [ ! -d "${NAME}" ]; then
-#    tar -xvf "${BUILDROOT}/${TARBALL}"
-#fi
-#cd ${NAME}
-
-#get_src Python 3.4.4 tar.xz https://www.python.org/ftp/python/3.4.4
-#runif config pyqtdeploycli --package python --target ${TARGET} configure
-#qmake SYSROOT=${SYSROOT}
-#make -e
-#runif install make install
 
 cd "${SYSROOT}"
-runif python tar -xvf "${HERE}/python3.4-sysroot.tgz"
+runif python tar -xvf "${SRCROOT}/python${PYTHON_VERSION_SHORT}-sysroot.tgz"
 
-#wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/files/sip/sip-4.17/sip-4.17.tar.gz
-#cd "${SYSROOT}/src"
-#tar -xvf "${BUILDROOT}/sip-4.17.tar.gz"
-#cd sip-4.17
-get_src sip 4.17 tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-4.17
+get_src sip ${SIP_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION}
 pyqtdeploycli --package sip --target ${TARGET} configure
 # TODO: no tools and no examples and no demos
 runif configure python configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --configuration=sip-win.cfg
@@ -197,29 +141,7 @@ qmake
 make
 runif install make install
 
-#get_src openssl 1.0.2d tar.gz https://www.openssl.org/source/old/1.0.2
-##./Configure --prefix="${SYSROOT}" mingw no-shared
-#make
-#make install
-
-#get_src zlib 1.2.8 tar.gz http://zlib.net
-##CROSS_PREFIX=i686-w64-mingw32.static- ./configure --prefix="${SYSROOT}" --static
-#make
-#make install
-
-##wget --directory-prefix="${BUILDROOT}" http://download.qt.io/official_releases/qt/5.5/5.5.1/single/qt-everywhere-opensource-src-5.5.1.tar.gz
-#cd "${SYSROOT}/src"
-##tar -xvf "${BUILDROOT}/qt-everywhere-opensource-src-5.5.1.tar.gz"
-#cd qt-everywhere-opensource-src-5.5.1
-#./configure -prefix "${SYSROOT}/qt-5.5.1" -static -release -nomake examples -qt-xcb -openssl-linked -v -I ${SYSROOT}/include -L ${SYSROOT}/lib -confirm-license -opensource
-#make
-#make install
-
-#wget --directory-prefix="${BUILDROOT}" http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt-gpl-5.5.1.tar.gz
-#cd "${SYSROOT}/src"
-#tar -xvf "${BUILDROOT}/PyQt-gpl-5.5.1.tar.gz"
-#cd PyQt-gpl-5.5.1
-get_src PyQt-gpl 5.5.1 tar.gz http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1
+get_src PyQt-gpl ${PYQT_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT_VERSION}
 pyqtdeploycli --package pyqt5 --target ${TARGET} configure
 #runif configure ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-linux.cfg --qmake="${SYSROOT}/qt-5.5.1/bin/qmake" --confirm-license
 runif configure ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-win.cfg --confirm-license --sip="${SYSROOT}/native/bin/sip"
@@ -230,4 +152,4 @@ runif qmake qmake -recursive PyQt5.pro
 make
 runif install make install
 
-cp -r ${HERE}/../st/venv/src/* ${SYSROOT}/src
+cp -r ${SRCROOT}/venv/src/* ${SYSROOT}/src
