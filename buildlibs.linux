@@ -17,8 +17,8 @@ source "${SRCROOT}/setenv.linux"
 
 mkdir -p ${BUILDROOT}
 cd ${BUILDROOT}
-mkdir -p sysroot-${TARGET}
-ln -fs sysroot-${TARGET} sysroot
+mkdir -p ${SYSROOT_DEVICE}
+ln -fsr "${SYSROOT_DEVICE}" "${SYSROOT}"
 mkdir -p "${SYSROOT}/src"
 mkdir -p "${SYSROOT}/native/src"
 
@@ -88,27 +88,17 @@ function not_installed {
     return ${not_configed}
 }
 
-cd "${SYSROOT}"
 
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Native SIP
 get_src sip ${SIP_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION} native
 pyqtdeploycli --package sip configure
-# TODO: shouldn't be needed but not sure how to fix it
-#sed -i 's/^\(py_inc_dir.*\)$/\1m/' sip-linux.cfg
-# TODO: no tools and no examples and no demos
 runif configure ${PY} configure.py
-#runif configure python configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --platform win32-g++ --target-py-version=3.4
-#${QMAKE_X}
-#echo ${CC}
 make
 runif install make install DESTDIR="${SYSROOT}/native"
-# ../hwns-build-linux/sysroot/native/usr/bin/sip
 
 
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross Python
-#runif python tar -xvf "${SRCROOT}/python${PYTHON_VERSION_SHORT}-sysroot.tgz"
 get_src Python ${PYTHON_VERSION} tar.xz https://www.python.org/ftp/python/${PYTHON_VERSION}
-#export PYTHON_ROOT="${SYSROOT}/root/python"
 export PYTHON_ROOT="${SYSROOT}/root/all"
 export SYSROOT_BAK="${SYSROOT}"
 export SYSROOT="${PYTHON_ROOT}"
@@ -124,27 +114,8 @@ export SYSROOT="${SYSROOT_BAK}"
 #runif tarball tar -cvzf ../python_root.tgz "$(dirname ${TARGET_ROOT:1})"
 
 
-#echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross glibc
-#get_src glibc 2.23 tar.xz http://ftp.gnu.org/gnu/glibc
-#export PACKAGE_DIR="$(pwd)"
-#export PACKAGE_BUILD_DIR="${PACKAGE_DIR}-build"
-#mkdir -p "${PACKAGE_BUILD_DIR}"
-#cd "${PACKAGE_BUILD_DIR}"
-#runif config "${PACKAGE_DIR}/configure" --host=${DEVICE} --build=x86_64-unknown-linux-gnu --prefix=${TARGET_ROOT}
-#make
-#runif install make install DESTDIR=${SYSROOT}/root
-#
-#cd ${SYSROOT}/root
-#tar -cvzf opt.tgz opt
-#echo - - - - - - - - checkpoint reached - - - - - - - - - - -
-#exit 0
-
-
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross Qt
 get_src qt-everywhere-opensource-src ${QT_VERSION} 7z http://download.qt.io/archive/qt/${QT_VERSION_SHORT}/${QT_VERSION}/single
-# -sysroot?
-# -device?
-#export QT_ROOT="${SYSROOT}/root/qt${TARGET_ROOT}"
 export QT_ROOT="${SYSROOT}/root/all${TARGET_ROOT}"
 export SYSROOT_BAK="${SYSROOT}"
 export SYSROOT="${QT_ROOT}"
@@ -152,82 +123,35 @@ runif a rm -rf qtbase/mkspecs/${QMAKE_XSPEC}
 runif b cp -R qtbase/mkspecs/linux-arm-gnueabi-g++ qtbase/mkspecs/${QMAKE_XSPEC}
 runif c sed -i "s/arm-linux-gnueabi-/${QMAKE_XSPEC}-/g" qtbase/mkspecs/${QMAKE_XSPEC}/qmake.conf
 runif d sed -i 's/\(QMAKE_LINK .*\)/\1 -lrt/g' qtbase/mkspecs/${QMAKE_XSPEC}/qmake.conf
-#runif config ./configure -v -release -platform linux-g++ -xplatform ${QMAKE_XSPEC} -linuxfb -nomake examples -nomake tests -extprefix ${QT_ROOT} -hostprefix ${SYSROOT}/native -opensource -confirm-license -skip qt3d -skip qtactiveqt -skip qtcanvas3d -skip qtconnectivity -skip qtdeclarative -skip qtenginio -skip qtlocation -skip qtmultimedia -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtsensors -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebsockets -skip qtwebview -skip qtdoc -skip qttools -nomake tools -no-warnings-are-errors -v
 runif config ./configure -v -release -platform linux-g++ -xplatform ${QMAKE_XSPEC} -linuxfb -nomake examples -nomake tests -no-gcc-sysroot -sysroot ${TARGET_ROOT} -extprefix ${QT_ROOT} -hostprefix ${SYSROOT_BAK}/native -opensource -confirm-license -skip qt3d -skip qtactiveqt -skip qtcanvas3d -skip qtconnectivity -skip qtdeclarative -skip qtenginio -skip qtlocation -skip qtmultimedia -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtsensors -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebsockets -skip qtwebview -skip qtdoc -skip qttools -nomake tools -no-warnings-are-errors -v
-#runif config ./configure -v -release -platform linux-g++ -xplatform ${QMAKE_XSPEC} -linuxfb -nomake examples -nomake tests -sysroot ${TARGET_ROOT} -extprefix ${QT_ROOT} -hostprefix ${SYSROOT}/native -opensource -confirm-license -skip qt3d -skip qtactiveqt -skip qtcanvas3d -skip qtconnectivity -skip qtdeclarative -skip qtenginio -skip qtlocation -skip qtmultimedia -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtsensors -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebsockets -skip qtwebview -skip qtdoc -skip qttools -nomake tools -no-warnings-are-errors
 make
 runif install make install
 
 export SYSROOT="${SYSROOT_BAK}"
 
-#export QMAKE_X="$(pwd)/qtbase/bin/qmake"
 export QMAKE_X="${SYSROOT}/native/bin/qmake"
-#echo - - - - - - - - checkpoint reached - - - - - - - - - - -
-#exit 0
 
-#echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross Qt
-#get_src qt ${QT_VERSION}
-#cd "${SYSROOT}/src"
-#git clone https://code.qt.io/qt/qt5.git
-#cd qt5
-#git checkout 5.6
-#perl init-repository
-#git checkout 5.6.0
-# these are actually for applications, not qt itself i guess
-#./configure -developer-build -opensource -nomake examples -nomake tests
-# ./configure -embedded arm -xplatform qws/linux-arm-g++ -opensource -nomake examples -nomake tests
-#get_src qt-everywhere-opensource-src ${QT_VERSION} 7z http://download.qt.io/archive/qt/${QT_VERSION_SHORT}/${QT_VERSION}/single
-#echo - - - - - - - - checkpoint reached - - - - - - - - - - -
-#exit 0
-
-#echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross SIP
-#get_src sip ${SIP_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION}
-#pyqtdeploycli --package sip --target ${TARGET} configure
-## TODO: shouldn't be needed but not sure how to fix it
-#sed -i 's/^\(py_inc_dir.*\)$/\1m/' sip-linux.cfg
-## TODO: no tools and no examples and no demos
-#runif configure ${PY} configure.py --sysroot="${TARGET_ROOT}" --platform=linux-arm-g++ --no-tools --use-qmake --configuration=sip-linux.cfg
-##runif configure python configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --platform win32-g++ --target-py-version=3.4
-#${QMAKE_X}
-#echo ${CC}
-#make
-#runif install make install
 
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross SIP
 get_src sip ${SIP_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/sip/sip-${SIP_VERSION}
-#pyqtdeploycli --package sip configure
-# TODO: shouldn't be needed but not sure how to fix it
-#sed -i 's/^\(py_inc_dir.*\)$/\1m/' sip-linux.cfg
-# TODO: no tools and no examples and no demos
 export SIP_ROOT="${SYSROOT}/root/all"
 sed "s;\$ROOTFS;${SIP_ROOT}${TARGET_ROOT};g" "${SRCROOT}/sip.cfg" > sip.cfg
 runif configure ${PY} configure.py --sysroot="${SIP_ROOT}" --use-qmake --configuration=sip.cfg
-#runif configure python configure.py --static --sysroot="${SYSROOT}" --no-tools --use-qmake --platform win32-g++ --target-py-version=3.4
 ${QMAKE_X}
-#echo ${CC}
 make
 runif install make install
-# ../hwns-build-linux/sysroot/native/usr/bin/sip
 
 
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross PyQt
 get_src PyQt${PYQT_MAJOR}_gpl ${PYQT_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT_VERSION}
-#pyqtdeploycli --package pyqt5 --target ${TARGET} configure
-#runif configure ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-linux.cfg --qmake="${SYSROOT}/qt-5.5.1/bin/qmake" --confirm-license
-#runif configure ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --configuration=pyqt5-linux.cfg --confirm-license --sip="${SYSROOT}/native/usr/bin/sip" --qmake="${QMAKE_X}"
-#runif configure ${PY} configure.py --static --sysroot="${SYSROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --confirm-license --sip="${SYSROOT}/native/usr/bin/sip" --qmake="${QMAKE_X}" --verbose
-#export PYQT_ROOT="${SYSROOT}/root/pyqt${TARGET_ROOT}"
 export PYQT_ROOT="${SYSROOT}/root/all"
 sed "s;\$ROOTFS;${PYQT_ROOT}${TARGET_ROOT};g" "${SRCROOT}/pyqt.cfg" > pyqt.cfg
 runif configure ${PY} configure.py --sysroot="${PYQT_ROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --confirm-license --sip="${SYSROOT}/native/usr/bin/sip" --qmake="${QMAKE_X}" --verbose --configuration pyqt.cfg
-#sed -i 's/QtDesigner \+//' PyQt5.pro
-#sed -i 's/QtOpenGL \+//' PyQt5.pro
-#sed -i 's/_QOpenGLFunctions_ES2 \+//' PyQt5.pro
 runif qmake ${QMAKE_X} -recursive PyQt5.pro
 make
 runif install make install
 
-#cp -r ${SRCROOT}/venv/src/* ${SYSROOT}/src
+
 cd "${SYSROOT}/root/all"
 echo export LD_LIBRARY_PATH="$((for f in $(find . -name '*.so*'); do dirname $f; done) | sort | uniq | sed 's/^\.//' | tr '\n' ':')" > "${TARGET_ROOT:1}/bin/ld_path"
 cd "${SRCROOT}"

@@ -7,18 +7,14 @@ export TARGET_ROOT=/opt/epc
 
 export PY=python3
 
-export TARGET=linux-32
-#export CROSS_QMAKE=qt5-qmake-arm-linux-gnueabihf
-export QMAKE_XSPEC="arm-fsl-linux-gnueabi"
-
-#export DEVICE="arm-linux-gnueabi"
 export DEVICE="arm-fsl-linux-gnueabi"
-#export PATH=/epc/t/262/linux-opusa3-1.4.0/toolchain/opt/freescale/usr/local/gcc-4.4.4-glibc-2.11.1-multilib-1.0/arm-fsl-linux-gnueabi/bin:${PATH}
+export QMAKE_XSPEC="${DEVICE}"
 export PATH=/opt/freescale/usr/local/gcc-4.4.4-glibc-2.11.1-multilib-1.0/arm-fsl-linux-gnueabi/bin:${PATH}
 
 export GITROOT="$(pwd)"
-export BUILDROOT="${GITROOT}-build-linux"
+export BUILDROOT="${GITROOT}-build-${DEVICE}"
 export SYSROOT="${BUILDROOT}/sysroot"
+export SYSROOT_DEVICE="${SYSROOT}-${DEVICE}"
 
 export OPENSSL_MAJOR=1
 export OPENSSL_MINOR=0
@@ -46,5 +42,4 @@ export SIP_VERSION=${SIP_MAJOR}.${SIP_MINOR}
 export PYQT_MAJOR=5
 export PYQT_MINOR=6
 #export PYQT_MAINTENANCE=1
-#export PYQT_VERSION=${PYQT_MAJOR}.${PYQT_MINOR}.${PYQT_MAINTENANCE}
-export PYQT_VERSION=${PYQT_MAJOR}.${PYQT_MINOR}
+export PYQT_VERSION="$(echo ${PYQT_MAJOR} ${PYQT_MINOR} ${PYQT_MAINTENANCE} | tr ' ' .)"
