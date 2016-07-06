@@ -3,4 +3,4 @@ export QT_QPA_FONTDIR=/opt/epc/lib/fonts
 export QT_QPA_PLATFORM_PLUGIN_PATH=/opt/epc/plugins/platform
 export QT_QPA_PLATFORM=linuxfb
 
-QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS='rotate=90'
+export QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS='rotate=90'
