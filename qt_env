@@ -1,0 +1,4 @@
+export QT_PLUGIN_PATH=/opt/epc/plugins
+export QT_QPA_FONTDIR=/opt/epc/lib/fonts
+export QT_QPA_PLATFORM_PLUGIN_PATH=/opt/epc/plugins/platform
+export QT_QPA_PLATFORM=linuxfb

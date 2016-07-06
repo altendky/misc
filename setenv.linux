@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -e
+set -vx
+
+export TARGET_ROOT=/opt/epc
+
+export PY=python3
+
+export TARGET=linux-32
+#export CROSS_QMAKE=qt5-qmake-arm-linux-gnueabihf
+export QMAKE_XSPEC="arm-fsl-linux-gnueabi"
+
+#export DEVICE="arm-linux-gnueabi"
+export DEVICE="arm-fsl-linux-gnueabi"
+#export PATH=/epc/t/262/linux-opusa3-1.4.0/toolchain/opt/freescale/usr/local/gcc-4.4.4-glibc-2.11.1-multilib-1.0/arm-fsl-linux-gnueabi/bin:${PATH}
+export PATH=/opt/freescale/usr/local/gcc-4.4.4-glibc-2.11.1-multilib-1.0/arm-fsl-linux-gnueabi/bin:${PATH}
+
+export GITROOT="$(pwd)"
+export BUILDROOT="${GITROOT}-build-linux"
+export SYSROOT="${BUILDROOT}/sysroot"
+
+export OPENSSL_MAJOR=1
+export OPENSSL_MINOR=0
+export OPENSSL_MAINTENANCE=2
+export OPENSSL_REVISION=d
+export OPENSSL_VERSION_SHORT=${OPENSSL_MAJOR}.${OPENSSL_MINOR}.${OPENSSL_MAINTENANCE}
+export OPENSSL_VERSION=${OPENSSL_VERSION_SHORT}${OPENSSL_REVISION}
+
+export PYTHON_MAJOR=3
+export PYTHON_MINOR=5
+export PYTHON_MAINTENANCE=2
+export PYTHON_VERSION_SHORT=${PYTHON_MAJOR}.${PYTHON_MINOR}
+export PYTHON_VERSION=${PYTHON_VERSION_SHORT}.${PYTHON_MAINTENANCE}
+
+export QT_MAJOR=5
+export QT_MINOR=6
+export QT_MAINTENANCE=0
+export QT_VERSION_SHORT=${QT_MAJOR}.${QT_MINOR}
+export QT_VERSION=${QT_VERSION_SHORT}.${QT_MAINTENANCE}
+
+export SIP_MAJOR=4
+export SIP_MINOR=18
+export SIP_VERSION=${SIP_MAJOR}.${SIP_MINOR}
+
+export PYQT_MAJOR=5
+export PYQT_MINOR=6
+#export PYQT_MAINTENANCE=1
+#export PYQT_VERSION=${PYQT_MAJOR}.${PYQT_MINOR}.${PYQT_MAINTENANCE}
+export PYQT_VERSION=${PYQT_MAJOR}.${PYQT_MINOR}
