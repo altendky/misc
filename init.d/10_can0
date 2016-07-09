@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ "$1" == "start" ]; then
+    modprobe flexcan
+    ip link set can0 type can bitrate 500000
+    ip link set can0 up
+fi
+
+if [ "$1" == "stop" ]; then
+    ip link set can0 down
+    modprobe --remove flexcan
+fi

@@ -97,6 +97,24 @@ make
 runif install make install DESTDIR="${SYSROOT}/native"
 
 
+echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross zlib
+get_src zlib ${ZLIB_VERSION} tar.gz http://zlib.net/
+(
+    #export INSTALLDIR=~/workbench/gcc-4.8.2/arm
+    #export PATH=$INSTALLDIR/bin:$PATH
+    export TARGETMACH=${DEVICE}
+    #export BUILDMACH=i686-pc-linux-gnu
+    export CROSS=${DEVICE}
+    export CC=${CROSS}-gcc
+    export LD=${CROSS}-ld
+    export AS=${CROSS}-as
+    runif configure ./configure --prefix=${TARGET_ROOT}
+    #runif configure ./configure --host=${DEVICE} --build=x86_64-unknown-linux-gnu --prefix=${TARGET_ROOT}
+    make
+    runif install make install DESTDIR="${SYSROOT}/root/all"
+)
+
+
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross Python
 get_src Python ${PYTHON_VERSION} tar.xz https://www.python.org/ftp/python/${PYTHON_VERSION}
 export PYTHON_ROOT="${SYSROOT}/root/all"
@@ -105,13 +123,29 @@ export SYSROOT="${PYTHON_ROOT}"
 export CONFIG_SITE=config.site
 echo ac_cv_file__dev_ptmx=no > ${CONFIG_SITE}
 echo ac_cv_file__dev_ptc=no >> ${CONFIG_SITE}
-# TODO would be nice to allow ensurepip but it seems to be 'installing' into /usr rather than /opt/epc/...
-runif config ./configure --host=${DEVICE} --build=x86_64-unknown-linux-gnu --prefix=${TARGET_ROOT} --disable-ipv6 --without-ensurepip
+cp Modules/Setup.dist Modules/Setup
+# TODO the CPP and LD flags seem to be compensating for it using ${TARGET_ROOT} without ${PYTHON_ROOT} so it apparently needs to know both here to be setup right.
+runif config ./configure --host=${DEVICE} --build=x86_64-unknown-linux-gnu --prefix=${TARGET_ROOT} --disable-ipv6 --without-ensurepip CPPFLAGS="${CPPFLAGS} -I\"${PYTHON_ROOT}/${TARGET_ROOT}/include\"" LDFLAGS="${LDFLAGS} -Wl,-L\"${PYTHON_ROOT}/${TARGET_ROOT}/lib\""
+# needed to manually enable building of various modules for the sake of setuptools below and others
+# TODO: this should not be needed, at least not manually and individually
+for m in _struct binascii unicodedata _posixsubprocess math pyexpat _md5 _sha1 _sha256 _sha512 select _random _socket zlib fcntl; do
+    sed -i "s/^#\(${m}\)/\1/" Modules/Setup
+done
 make
 runif install make install DESTDIR="${PYTHON_ROOT}"
 cd "${PYTHON_ROOT}"
 export SYSROOT="${SYSROOT_BAK}"
 #runif tarball tar -cvzf ../python_root.tgz "$(dirname ${TARGET_ROOT:1})"
+
+
+echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross Setuptools
+get_src setuptools ${SETUPTOOLS_VERSION} tar.gz https://pypi.python.org/packages/21/d7/3e7e4b42d40469d2b770e10aee5b49538ecf2853eb5635d2d2536b286e2d
+export SETUPTOOLS_ROOT="${PYTHON_ROOT}"
+runif install ${PY} setup.py install --force --root "${SETUPTOOLS_ROOT}" --prefix "${TARGET_ROOT}"
+
+cd "${SYSROOT}/root/all"
+# make this use the variables...
+tar -cvzf opt_epc.tgz opt
 
 
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross Qt
@@ -155,11 +189,25 @@ runif install make install
 cd "${SYSROOT}/root/all"
 echo export LD_LIBRARY_PATH="$((for f in $(find . -name '*.so*'); do dirname $f; done) | sort | uniq | sed 's/^\.//' | tr '\n' ':')" > "${TARGET_ROOT:1}/bin/ld_path"
 cd "${SRCROOT}"
-for f in qt_env hello.py hello.sh; do
+for f in qt_env reinstall-epc hello.py hello; do
     cd "${SYSROOT}/root/all/${TARGET_ROOT}/bin"
     cp "${SRCROOT}/$f" .
-    chmod a+x "$f"
 done
 cd "${SYSROOT}/root/all"
 # make this use the variables...
-tar -cvzf opt_epc.tgz opt
+cp -R "${SRCROOT}/init.d" opt/epc/
+mkdir -p opt/bin/
+cp -R "${SRCROOT}/reinstall-epc" opt/bin/
+export TARBALL="${SYSROOT}/root/all/$(echo $(echo ${TARGET_ROOT} | tr '/' ' ') | tr ' ' '_').tgz"
+tar -cvzf "${TARBALL}" "$(echo ${TARGET_ROOT} | sed 's;/\([^/]\+\)/.*;\1;')"
+
+echo -n 'Copy to USB (y/n)?'
+read COPY
+if [ "y" == "${COPY}" ]; then
+    export DEV=/dev/sdc1
+    export DEST=/media/sdc1
+    pmount "${DEV}"
+    cp "${TARBALL}" "${DEST}"
+    cp "${SRCROOT}/reinstall-epc" "${DEST}"
+    pumount "${DEV}"
+fi

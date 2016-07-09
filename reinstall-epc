@@ -1,0 +1,8 @@
+#!/bin/sh
+
+cd /
+rm -rf /opt/epc
+tar -xvzf /disk/usbsda1/opt_epc.tgz
+
+rm -rf /opt/etc/init.d
+ln -s /opt/epc/init.d /opt/etc/init.d
