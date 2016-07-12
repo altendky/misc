@@ -157,7 +157,8 @@ runif a rm -rf qtbase/mkspecs/${QMAKE_XSPEC}
 runif b cp -R qtbase/mkspecs/linux-arm-gnueabi-g++ qtbase/mkspecs/${QMAKE_XSPEC}
 runif c sed -i "s/arm-linux-gnueabi-/${QMAKE_XSPEC}-/g" qtbase/mkspecs/${QMAKE_XSPEC}/qmake.conf
 runif d sed -i 's/\(QMAKE_LINK .*\)/\1 -lrt/g' qtbase/mkspecs/${QMAKE_XSPEC}/qmake.conf
-runif config ./configure -v -release -platform linux-g++ -xplatform ${QMAKE_XSPEC} -linuxfb -nomake examples -nomake tests -no-gcc-sysroot -sysroot ${TARGET_ROOT} -extprefix ${QT_ROOT} -hostprefix ${SYSROOT_BAK}/native -opensource -confirm-license -skip qt3d -skip qtactiveqt -skip qtcanvas3d -skip qtconnectivity -skip qtdeclarative -skip qtenginio -skip qtlocation -skip qtmultimedia -skip qtquickcontrols -skip qtquickcontrols2 -skip qtscript -skip qtsensors -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebsockets -skip qtwebview -skip qtdoc -skip qttools -nomake tools -no-warnings-are-errors -v
+export NO_QML="-skip qtdeclarative -skip qtquickcontrols"
+runif config ./configure -v -release -platform linux-g++ -xplatform ${QMAKE_XSPEC} -linuxfb -nomake examples -nomake tests -no-gcc-sysroot -sysroot ${TARGET_ROOT} -extprefix ${QT_ROOT} -hostprefix ${SYSROOT_BAK}/native -opensource -confirm-license -skip qt3d -skip qtactiveqt -skip qtcanvas3d -skip qtconnectivity -skip qtenginio -skip qtlocation -skip qtmultimedia -skip qtquickcontrols2 -skip qtscript -skip qtsensors -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebsockets -skip qtwebview -skip qtdoc -skip qttools -nomake tools -no-warnings-are-errors -v ${NO_QML}
 make
 runif install make install
 
@@ -180,7 +181,8 @@ echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 get_src PyQt${PYQT_MAJOR}_gpl ${PYQT_VERSION} tar.gz http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-${PYQT_VERSION}
 export PYQT_ROOT="${SYSROOT}/root/all"
 sed "s;\$ROOTFS;${PYQT_ROOT}${TARGET_ROOT};g" "${SRCROOT}/pyqt.cfg" > pyqt.cfg
-runif configure ${PY} configure.py --sysroot="${PYQT_ROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --no-qml-plugin --confirm-license --sip="${SYSROOT}/native/usr/bin/sip" --qmake="${QMAKE_X}" --verbose --configuration pyqt.cfg
+export NO_QML="--no-qml-plugin"
+runif configure ${PY} configure.py --sysroot="${PYQT_ROOT}" --disable=enginio --no-tools --no-qsci-api --no-designer-plugin --confirm-license --sip="${SYSROOT}/native/usr/bin/sip" --qmake="${QMAKE_X}" --verbose --configuration pyqt.cfg ${NO_QML}
 runif qmake ${QMAKE_X} -recursive PyQt5.pro
 make
 runif install make install
