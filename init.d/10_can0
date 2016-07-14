@@ -3,6 +3,7 @@
 if [ "$1" == "start" ]; then
     modprobe flexcan
     ip link set can0 type can bitrate 500000
+    ip link set can0 txqueuelen 100
     ip link set can0 up
 fi
 
