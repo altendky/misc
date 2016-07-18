@@ -97,6 +97,17 @@ make
 runif install make install DESTDIR="${SYSROOT}/native"
 
 
+echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross rsync
+get_src rsync ${RSYNC_VERSION} tar.gz https://download.samba.org/pub/rsync/src
+export RSYNC_ROOT="${SYSROOT}/root/all"
+export SYSROOT_BAK="${SYSROOT}"
+export SYSROOT="${RSYNC_ROOT}"
+#runif config ./configure --host=${DEVICE} --build=x86_64-unknown-linux-gnu --prefix=${TARGET_ROOT} --disable-ipv6 --without-ensurepip CPPFLAGS="${CPPFLAGS} -I\"${PYTHON_ROOT}/${TARGET_ROOT}/include\"" LDFLAGS="${LDFLAGS} -Wl,-L\"${PYTHON_ROOT}/${TARGET_ROOT}/lib\""
+runif config ./configure --host=${DEVICE} --prefix=${TARGET_ROOT}
+runif install make install DESTDIR="${RSYNC_ROOT}"
+export SYSROOT="${SYSROOT_BAK}"
+
+
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross zlib
 get_src zlib ${ZLIB_VERSION} tar.gz http://zlib.net/
 (
