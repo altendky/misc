@@ -134,7 +134,7 @@ export SYSROOT="${PYTHON_ROOT}"
 export CONFIG_SITE=config.site
 echo ac_cv_file__dev_ptmx=no > ${CONFIG_SITE}
 echo ac_cv_file__dev_ptc=no >> ${CONFIG_SITE}
-cp Modules/Setup.dist Modules/Setup
+cp -p Modules/Setup.dist Modules/Setup
 # TODO the CPP and LD flags seem to be compensating for it using ${TARGET_ROOT} without ${PYTHON_ROOT} so it apparently needs to know both here to be setup right.
 runif config ./configure --host=${DEVICE} --build=x86_64-unknown-linux-gnu --prefix=${TARGET_ROOT} --disable-ipv6 --without-ensurepip CPPFLAGS="${CPPFLAGS} -I\"${PYTHON_ROOT}/${TARGET_ROOT}/include\"" LDFLAGS="${LDFLAGS} -Wl,-L\"${PYTHON_ROOT}/${TARGET_ROOT}/lib\""
 # needed to manually enable building of various modules for the sake of setuptools below and others
@@ -161,7 +161,7 @@ export QT_ROOT="${SYSROOT}/root/all${TARGET_ROOT}"
 export SYSROOT_BAK="${SYSROOT}"
 export SYSROOT="${QT_ROOT}"
 runif a rm -rf qtbase/mkspecs/${QMAKE_XSPEC}
-runif b cp -R qtbase/mkspecs/linux-arm-gnueabi-g++ qtbase/mkspecs/${QMAKE_XSPEC}
+runif b cp -p -R qtbase/mkspecs/linux-arm-gnueabi-g++ qtbase/mkspecs/${QMAKE_XSPEC}
 runif c sed -i "s/arm-linux-gnueabi-/${QMAKE_XSPEC}-/g" qtbase/mkspecs/${QMAKE_XSPEC}/qmake.conf
 runif d sed -i 's/\(QMAKE_LINK .*\)/\1 -lrt/g' qtbase/mkspecs/${QMAKE_XSPEC}/qmake.conf
 export NO_QML="-skip qtdeclarative -skip qtquickcontrols"
@@ -200,23 +200,29 @@ echo export LD_LIBRARY_PATH="$((for f in $(find . -name '*.so*'); do dirname $f;
 cd "${SRCROOT}"
 for f in qt_env reinstall-epc hello.py hello; do
     cd "${SYSROOT}/root/all/${TARGET_ROOT}/bin"
-    cp "${SRCROOT}/$f" .
+    cp -p "${SRCROOT}/$f" .
 done
 cd "${SYSROOT}/root/all"
 # make this use the variables...
-cp -R "${SRCROOT}/init.d" opt/epc/
+cp -p -R "${SRCROOT}/init.d" opt/epc/
 mkdir -p opt/bin/
-cp -R "${SRCROOT}/reinstall-epc" opt/bin/
-export TARBALL="${SYSROOT}/root/all/$(echo $(echo ${TARGET_ROOT} | tr '/' ' ') | tr ' ' '_').tgz"
-tar -cvzf "${TARBALL}" "$(echo ${TARGET_ROOT} | sed 's;/\([^/]\+\)/.*;\1;')"
+cp -p -R "${SRCROOT}/reinstall-epc" opt/bin/
 
 echo -n 'Copy to USB (y/n)?'
 read COPY
 if [ "y" == "${COPY}" ]; then
+    export TARBALL="${SYSROOT}/root/all/$(echo $(echo ${TARGET_ROOT} | tr '/' ' ') | tr ' ' '_').tgz"
+    tar -cvzf "${TARBALL}" "$(echo ${TARGET_ROOT} | sed 's;/\([^/]\+\)/.*;\1;')"
     export DEV=/dev/sdc1
     export DEST=/media/sdc1
     pmount "${DEV}"
-    cp "${TARBALL}" "${DEST}"
-    cp "${SRCROOT}/reinstall-epc" "${DEST}"
+    cp -p "${TARBALL}" "${DEST}"
+    cp -p "${SRCROOT}/reinstall-epc" "${DEST}"
     pumount "${DEV}"
+fi
+
+echo -n 'rsync to target (y/n)?'
+read COPY
+if [ "y" == "${COPY}" ]; then
+    rsync -avz --delete --rsync-path=/opt/epc/bin/rsync -e 'ssh -oKexAlgorithms=+diffie-hellman-group1-sha1' ${SYSROOT}/root/all/${TARGET_ROOT} root@169.254.1.42:"$(dirname ${TARGET_ROOT})"
 fi
