@@ -224,5 +224,11 @@ fi
 echo -n 'rsync to target (y/n)?'
 read COPY
 if [ "y" == "${COPY}" ]; then
-    rsync -avz --delete --rsync-path=/opt/epc/bin/rsync -e 'ssh -oKexAlgorithms=+diffie-hellman-group1-sha1' ${SYSROOT}/root/all/${TARGET_ROOT} root@169.254.1.42:"$(dirname ${TARGET_ROOT})"
+    export DEST_PATH=$(dirname "${TARGET_ROOT}")
+    export SSH_CMD="ssh -oKexAlgorithms=+diffie-hellman-group1-sha1"
+    export SSH_HOST="root@169.254.1.42"
+    rsync -avz --delete --rsync-path=/opt/epc/bin/rsync -e "${SSH_CMD}" "${SYSROOT}/root/all/${TARGET_ROOT}" ${SSH_HOST}:"${DEST_PATH}"
+    rsync -avz --delete --rsync-path=/opt/epc/bin/rsync -e "${SSH_CMD}" "${SRCROOT}/reinstall-epc" ${SSH_HOST}:"${DEST_PATH}"
+
+    ${SSH_CMD} ${SSH_HOST} "\"${DEST_PATH}/reinstall-epc\" --no-tar"
 fi
