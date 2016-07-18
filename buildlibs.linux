@@ -143,10 +143,6 @@ get_src setuptools ${SETUPTOOLS_VERSION} tar.gz https://pypi.python.org/packages
 export SETUPTOOLS_ROOT="${PYTHON_ROOT}"
 runif install ${PY} setup.py install --force --root "${SETUPTOOLS_ROOT}" --prefix "${TARGET_ROOT}"
 
-cd "${SYSROOT}/root/all"
-# make this use the variables...
-tar -cvzf opt_epc.tgz opt
-
 
 echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross Qt
 get_src qt-everywhere-opensource-src ${QT_VERSION} 7z http://download.qt.io/archive/qt/${QT_VERSION_SHORT}/${QT_VERSION}/single
