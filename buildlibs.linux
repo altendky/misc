@@ -41,7 +41,9 @@ function get_src {
     if [ ! -d "${NAME}" ]; then
         export FULLPATH="${BUILDROOT}/${TARBALL}"
         if [ "7z" == "${EXT}" ]; then
-            7z x ${FULLPATH}
+            7z x "${FULLPATH}"
+        elif [ "zip" == "${EXT}" ]; then
+            unzip "${FULLPATH}"
         else
             tar -xvf "${FULLPATH}"
         fi
@@ -193,6 +195,11 @@ runif configure ${PY} configure.py --sysroot="${PYQT_ROOT}" --disable=enginio --
 runif qmake ${QMAKE_X} -recursive PyQt5.pro
 make
 runif install make install
+
+
+echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross FontAwesome
+get_src font-awesome ${FONTAWESOME_VERSION} zip http://fontawesome.io/assets
+cp fonts/fontawesome-webfont.ttf ${SYSROOT}/root/all/${TARGET_ROOT}/lib/fonts
 
 
 cd "${SYSROOT}/root/all"
