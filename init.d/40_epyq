@@ -1,0 +1,10 @@
+#!/bin/sh
+ 
+if [ "$1" == "start" ]; then
+    cd /opt/st.hmi
+    ./launch
+fi                                          
+                                   
+if [ "$1" == "stop" ]; then
+    killall python3
+fi
