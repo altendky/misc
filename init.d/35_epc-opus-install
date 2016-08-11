@@ -1,0 +1,10 @@
+#!/bin/sh
+
+export TRIGGER_FILE="/opt/install_epc"
+if [ -e "${TRIGGER_FILE}" ]; then
+    /opt/bin/reinstall-epc --no-tar
+    setbootlogo -f /opt/epc/logo.png
+    /opt/st.hmi/reinstall-st.hmi --no-tar
+    rm "${TRIGGER_FILE}"
+    reboot
+fi
