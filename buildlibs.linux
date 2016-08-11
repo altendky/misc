@@ -214,6 +214,39 @@ cd "${SYSROOT}/root/all"
 cp -p -R "${SRCROOT}/init.d" opt/epc/
 mkdir -p opt/bin/
 cp -p -R "${SRCROOT}/reinstall-epc" opt/bin/
+cp -p -R "${SRCROOT}/logo.png" opt/epc/
+
+echo -n 'Generate for USB system update (y/n)?'
+read COPY
+if [ "y" == "${COPY}" ]; then
+    # Just do a subshell instead of backing up vars?
+    export CWD_BAK="$(pwd)"
+    export VERSION=0.0.1
+    export BASENAME="user_opusa3_${VERSION}.tar"
+    export TARBALL="${SYSROOT}/root/all/${BASENAME}"
+
+    export DEST="${SYSROOT}/root/all/opt/etc/init.d/"
+    mkdir -p "${DEST}"
+    cp -p "${SRCROOT}/init.d/35_epc-opus-install" "${DEST}"
+    # Must agree with epc-opus-install to trigger
+    touch "${SYSROOT}/root/all/opt/install_epc"
+
+    cd opt
+    tar -cvf "${TARBALL}" *
+
+    rm "${SYSROOT}/root/all/opt/install_epc"
+
+    echo -n 'Enter the path to the application directory: '
+    read APP_PATH
+    cd "$(dirname "${APP_PATH}")"
+    tar --append --file="${TARBALL}" "$(basename "${APP_PATH}")"
+
+    gzip --force ${TARBALL}
+
+    md5sum ${TARBALL}.gz > ${TARBALL}.gz.md5
+
+    cd "${CWD_BAK}"
+fi
 
 echo -n 'Copy to USB (y/n)?'
 read COPY
