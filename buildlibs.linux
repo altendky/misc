@@ -219,9 +219,12 @@ cp -p -R "${SRCROOT}/logo.png" opt/epc/
 echo -n 'Generate for USB system update (y/n)?'
 read COPY
 if [ "y" == "${COPY}" ]; then
+    echo -n 'Enter the path to the application directory: '
+    read APP_PATH
+
     # Just do a subshell instead of backing up vars?
     export CWD_BAK="$(pwd)"
-    export VERSION=0.0.1
+    export VERSION=$(cd "${APP_PATH}"; git rev-parse HEAD | cut -c1-7)
     export BASENAME="user_opusa3_${VERSION}.tar"
     export TARBALL="${SYSROOT}/root/all/${BASENAME}"
 
@@ -236,8 +239,6 @@ if [ "y" == "${COPY}" ]; then
 
     rm "${SYSROOT}/root/all/opt/install_epc"
 
-    echo -n 'Enter the path to the application directory: '
-    read APP_PATH
     cd "${APP_PATH}"
     cd epyq
     ./generaterevision.py
