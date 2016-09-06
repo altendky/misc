@@ -239,7 +239,8 @@ if [ "y" == "${COPY}" ]; then
     echo -n 'Enter the path to the application directory: '
     read APP_PATH
     cd "$(dirname "${APP_PATH}")"
-    tar --append --file="${TARBALL}" "$(basename "${APP_PATH}")"
+    tar --append --exclude venv --exclude .git --file="${TARBALL}" "$(basename "${APP_PATH}")"
+    tar --append --file="${TARBALL}" "$(basename "${APP_PATH}")/venv/src"
 
     gzip --force ${TARBALL}
 
