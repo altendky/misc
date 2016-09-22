@@ -197,10 +197,6 @@ make
 runif install make install
 
 
-echo - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Cross FontAwesome
-get_src font-awesome ${FONTAWESOME_VERSION} zip http://fontawesome.io/assets
-cp fonts/fontawesome-webfont.ttf ${SYSROOT}/root/all/${TARGET_ROOT}/lib/fonts
-
 
 cd "${SYSROOT}/root/all"
 echo export LD_LIBRARY_PATH="$((for f in $(find . -name '*.so*'); do dirname $f; done) | sort | uniq | sed 's/^\.//' | tr '\n' ':')" > "${TARGET_ROOT:1}/bin/ld_path"
