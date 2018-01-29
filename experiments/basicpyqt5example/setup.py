@@ -4,7 +4,11 @@ setuptools.setup(
     name='basicpyqt5example',
     author="Kyle Altendorf",
     classifiers=[
-        'License :: OSI Approved :: MIT License',
+        ' :: '.join([
+            'License',
+            'OSI Approved',
+            'GNU General Public License v3 or later (GPLv3+)',
+        ]),
         'Intended Audience :: Developers',
     ],
     packages=setuptools.find_packages('src'),
